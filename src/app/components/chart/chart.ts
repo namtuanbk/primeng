@@ -1,5 +1,5 @@
-import {NgModule,Component,ElementRef,AfterViewInit,OnDestroy,Input,Output,EventEmitter,ChangeDetectionStrategy, ViewEncapsulation} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import { NgModule, Component, ElementRef, AfterViewInit, OnDestroy, Input, Output, EventEmitter, ChangeDetectionStrategy, ViewEncapsulation, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import Chart from 'chart.js/auto';
 
 @Component({
@@ -37,13 +37,13 @@ export class UIChart implements AfterViewInit, OnDestroy {
 
     chart: any;
 
-    constructor(public el: ElementRef) {}
+    constructor(public el: ElementRef, @Inject(PLATFORM_ID) private platformId: any) { }
 
     @Input() get data(): any {
         return this._data;
     }
 
-    set data(val:any) {
+    set data(val: any) {
         this._data = val;
         this.reinit();
     }
@@ -52,7 +52,7 @@ export class UIChart implements AfterViewInit, OnDestroy {
         return this._options;
     }
 
-    set options(val:any) {
+    set options(val: any) {
         this._options = val;
         this.reinit();
     }
@@ -60,6 +60,7 @@ export class UIChart implements AfterViewInit, OnDestroy {
     ngAfterViewInit() {
         this.initChart();
         this.initialized = true;
+
     }
 
     onCanvasClick(event) {
@@ -68,26 +69,27 @@ export class UIChart implements AfterViewInit, OnDestroy {
             const dataset = this.chart.getElementsAtEventForMode(event, 'dataset', { intersect: true }, false);
 
             if (element && element[0] && dataset) {
-                this.onDataSelect.emit({originalEvent: event, element: element[0], dataset: dataset});
+                this.onDataSelect.emit({ originalEvent: event, element: element[0], dataset: dataset });
             }
         }
     }
 
     initChart() {
-        let opts = this.options||{};
+        let opts = this.options || {};
         opts.responsive = this.responsive;
 
         // allows chart to resize in responsive mode
-        if (opts.responsive&&(this.height||this.width)) {
+        if (opts.responsive && (this.height || this.width)) {
             opts.maintainAspectRatio = false;
         }
-
-        this.chart = new Chart(this.el.nativeElement.children[0].children[0], {
-            type: this.type,
-            data: this.data,
-            options: this.options,
-            plugins: this.plugins
-        });
+        if (isPlatformBrowser(this.platformId)) {
+            this.chart = new Chart(this.el.nativeElement.children[0].children[0], {
+                type: this.type,
+                data: this.data,
+                options: this.options,
+                plugins: this.plugins
+            });
+        }
     }
 
     getCanvas() {

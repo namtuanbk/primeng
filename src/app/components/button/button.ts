@@ -1,8 +1,8 @@
-import {NgModule,Directive,Component,ElementRef,EventEmitter,AfterViewInit,Output,OnDestroy,Input,ChangeDetectionStrategy, ViewEncapsulation, ContentChildren, AfterContentInit, TemplateRef, QueryList} from '@angular/core';
-import {DomHandler} from 'primeng/dom';
-import {CommonModule} from '@angular/common';
-import {RippleModule} from 'primeng/ripple';
-import {PrimeTemplate} from 'primeng/api';
+import { NgModule, Directive, Component, ElementRef, EventEmitter, AfterViewInit, Output, OnDestroy, Input, ChangeDetectionStrategy, ViewEncapsulation, ContentChildren, AfterContentInit, TemplateRef, QueryList, Inject, PLATFORM_ID } from '@angular/core';
+import { DomHandler } from 'primeng/dom';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { RippleModule } from 'primeng/ripple';
+import { PrimeTemplate } from 'primeng/api';
 
 @Directive({
     selector: '[pButton]',
@@ -26,29 +26,31 @@ export class ButtonDirective implements AfterViewInit, OnDestroy {
 
     public _initialStyleClass: string;
 
-    constructor(public el: ElementRef) {}
+    constructor(public el: ElementRef, @Inject(PLATFORM_ID) private platformId: any) { }
 
     ngAfterViewInit() {
-        this._initialStyleClass = this.el.nativeElement.className;
-        DomHandler.addMultipleClasses(this.el.nativeElement, this.getStyleClass());
+        if (isPlatformBrowser(this.platformId)) {
+            this._initialStyleClass = this.el.nativeElement.className;
+            DomHandler.addMultipleClasses(this.el.nativeElement, this.getStyleClass());
 
-        if (this.icon || this.loading) {
-            this.createIconEl();
+            if (this.icon || this.loading) {
+                this.createIconEl();
+            }
+
+            let labelElement = document.createElement("span");
+            if (this.icon && !this.label) {
+                labelElement.setAttribute('aria-hidden', 'true');
+            }
+            labelElement.className = 'p-button-label';
+
+            if (this.label)
+                labelElement.appendChild(document.createTextNode(this.label));
+            else
+                labelElement.innerHTML = '&nbsp;';
+
+            this.el.nativeElement.appendChild(labelElement);
+            this.initialized = true;
         }
-
-        let labelElement = document.createElement("span");
-        if (this.icon && !this.label) {
-            labelElement.setAttribute('aria-hidden', 'true');
-        }
-        labelElement.className = 'p-button-label';
-
-        if (this.label)
-            labelElement.appendChild(document.createTextNode(this.label));
-        else
-            labelElement.innerHTML = '&nbsp;';
-
-        this.el.nativeElement.appendChild(labelElement);
-        this.initialized = true;
     }
 
     getStyleClass(): string {
@@ -83,7 +85,7 @@ export class ButtonDirective implements AfterViewInit, OnDestroy {
 
         let iconClass = this.getIconClass();
 
-        if(iconClass) {
+        if (iconClass) {
             DomHandler.addMultipleClasses(iconElement, iconClass);
         }
 
@@ -236,14 +238,14 @@ export class Button implements AfterContentInit {
 
     ngAfterContentInit() {
         this.templates.forEach((item) => {
-            switch(item.getType()) {
+            switch (item.getType()) {
                 case 'content':
                     this.contentTemplate = item.template;
-                break;
+                    break;
 
                 default:
                     this.contentTemplate = item.template;
-                break;
+                    break;
             }
         });
     }
@@ -257,8 +259,8 @@ export class Button implements AfterContentInit {
 }
 
 @NgModule({
-    imports: [CommonModule,RippleModule],
-    exports: [ButtonDirective,Button],
-    declarations: [ButtonDirective,Button]
+    imports: [CommonModule, RippleModule],
+    exports: [ButtonDirective, Button],
+    declarations: [ButtonDirective, Button]
 })
 export class ButtonModule { }
